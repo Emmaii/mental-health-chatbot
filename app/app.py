@@ -10,8 +10,11 @@ openai.api_key = st.secrets["OPENROUTER_API_KEY"]
 
 openai.api_base = "https://openrouter.ai/api/v1"
 
-st.set_page_config(page_title="Mental Health Chatbot")
-st.title("🧠 Mental Health Chatbot")
+st.set_page_config(
+    page_title="Emmanuel’s Mental Health Chatbot",
+    page_icon="🧠"
+)
+st.title("👋 Emmanuel’s Mental Health Chatbot")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
