@@ -8,9 +8,3 @@ A friendly, AI-powered mental health assistant built with Streamlit, FAISS, and 
 - **Smooth UX**: “🤖 Thinking…” spinner and chat bubbles for an app-like feel.
 - **One-Click Deployment**: Ready for Streamlit Cloud or Heroku.
 
-## 🔧 Getting Started
-
-1. **Clone** this repo  
-   ```bash
-   git clone https://github.com/Emmaii/mental-health-chatbot.git
-   cd mental-health-chatbot
