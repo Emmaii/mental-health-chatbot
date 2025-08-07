@@ -6,10 +6,8 @@ import os, sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from scripts.retrieve_answer import retrieve_answer
-from dotenv import load_dotenv
+openai.api_key = st.secrets["OPENROUTER_API_KEY"]
 
-load_dotenv()
-openai.api_key = os.getenv("OPENROUTER_API_KEY")
 openai.api_base = "https://openrouter.ai/api/v1"
 
 st.set_page_config(page_title="Mental Health Chatbot")
