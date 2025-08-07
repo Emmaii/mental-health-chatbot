@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Rebuild FAISS index at deploy time if missing or stale
+python scripts/embed_and_index.py
