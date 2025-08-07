@@ -1,40 +1,64 @@
-import pandas as pd
-from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
 import os
 import pickle
+import faiss
+import numpy as np
+import pandas as pd
+from transformers import AutoTokenizer, AutoModel
+import torch
 
-# Step 1: Load FAQ CSV
-csv_path = os.path.join("data", "faqs.csv")
-df = pd.read_csv(csv_path)
-questions = df["question"].tolist()
-answers = df["answer"].tolist()
+# Paths
+CSV_PATH       = os.path.join("data", "faqs.csv")
+INDEX_PATH     = os.path.join("vector_store", "faiss_index.index")
+QUESTIONS_PATH = os.path.join("vector_store", "questions.pkl")
+ANSWERS_PATH   = os.path.join("vector_store", "faq_answers.pkl")
 
-# Step 2: Load embedding model
-print("🔍 Loading embedding model...")
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# Model for embeddings
+MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+tokenizer  = AutoTokenizer.from_pretrained(MODEL_NAME)
+model      = AutoModel.from_pretrained(MODEL_NAME)
 
-# Step 3: Encode questions
-print("⚙️ Generating embeddings...")
-embeddings = model.encode(questions, convert_to_numpy=True)
+def embed_text(text: str) -> np.ndarray:
+    """Return a mean-pooled embedding for a single string."""
+    encoded = tokenizer(text, padding=True, truncation=True, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**encoded)
+    vec = outputs.last_hidden_state.mean(dim=1).cpu().numpy()[0]
+    # normalize to unit length
+    return vec / np.linalg.norm(vec)
 
-# Step 4: Build FAISS index
-print("📦 Indexing with FAISS...")
-dimension = embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
-index.add(embeddings)
+def build_faiss_index():
+    df = pd.read_csv(CSV_PATH).dropna(subset=["question", "answer"])
+    vectors, questions, answers = [], [], []
 
-# Step 5: Save everything
-output_dir = "../vector_store"
-os.makedirs(output_dir, exist_ok=True)
+    for idx, row in df.iterrows():
+        q, a = str(row["question"]).strip(), row["answer"]
+        if not q:
+            continue
+        try:
+            emb = embed_text(q)
+        except Exception as e:
+            print(f"[❌] Embed failed row {idx}: {e}")
+            continue
+        vectors.append(emb)
+        questions.append(q)
+        answers.append(a)
 
-faiss.write_index(index, os.path.join(output_dir, "faiss_index.index"))
+    if not vectors:
+        raise RuntimeError("No embeddings generated. Check CSV.")
 
-with open(os.path.join(output_dir, "faq_answers.pkl"), "wb") as f:
-    pickle.dump(answers, f)
+    dim = len(vectors[0])
+    # inner-product index == cosine when vectors normalized
+    index = faiss.IndexFlatIP(dim)
+    index.add(np.array(vectors, dtype="float32"))
 
-with open(os.path.join(output_dir, "questions.pkl"), "wb") as f:
-    pickle.dump(questions, f)
+    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
+    faiss.write_index(index, INDEX_PATH)
+    with open(QUESTIONS_PATH, "wb") as f:
+        pickle.dump(questions, f)
+    with open(ANSWERS_PATH, "wb") as f:
+        pickle.dump(answers, f)
 
-print("✅ Done! Vector index and data saved.")
+    print(f"[✅] Indexed {len(questions)} FAQs to {INDEX_PATH}")
+
+if __name__ == "__main__":
+    build_faiss_index()

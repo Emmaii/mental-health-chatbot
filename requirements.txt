@@ -1,4 +1,9 @@
-python-dotenv
+streamlit
+openai
 requests
-
-
+python-dotenv
+faiss-cpu
+numpy
+pandas
+transformers
+torch
