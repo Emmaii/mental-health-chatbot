@@ -1,12 +1,14 @@
-from scripts.chat_with_llm import query_llm
+from scripts.retrieve_answer import retrieve_answer
 
-print("🤖 Mental Health Chatbot is online. Type 'exit' to quit.\n")
+def main():
+    print("Mental Health Chatbot (CLI)")
+    print("Type 'exit' to quit.\n")
+    while True:
+        user = input("You: ")
+        if user.lower() in ("exit", "quit"):
+            break
+        print("Bot:", retrieve_answer(user))
+    print("Goodbye!")
 
-while True:
-    prompt = input("You: ")
-    if prompt.lower() in ["exit", "quit"]:
-        print("Bot: Take care! 💙")
-        break
-
-    response = query_llm(prompt)
-    print("Bot:", response)
+if __name__ == "__main__":
+    main()
